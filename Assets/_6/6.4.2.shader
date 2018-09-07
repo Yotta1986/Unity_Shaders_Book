@@ -1,5 +1,5 @@
 ﻿
-Shader "_Mine/6.4.1" 
+Shader "_Mine/6.4.2" 
 {
 	Properties 
 	{
@@ -31,7 +31,7 @@ Shader "_Mine/6.4.1"
 			struct v2f
 			{
 				float4 pos : SV_POSITION;
-				fixed3 color : COLOR;
+				fixed3 worldNormal : COLOR;
 			};
 
 
@@ -39,23 +39,21 @@ Shader "_Mine/6.4.1"
 			{
 				v2f o;
 				o.pos = UnityObjectToClipPos (v.vertex);
-
-				fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.xyz;
-
-				fixed3 worldNormal = normalize(mul(v.normal, (float3x3)unity_WorldToObject));
-
-				fixed3 worldLight = normalize(_WorldSpaceLightPos0.xyz);
-
-				fixed3 diffuse = _LightColor0.rgb * _Diffuse.rgb * saturate(dot(worldNormal, worldLight));
-
-				o.color = ambient + diffuse;
+				o.worldNormal = normalize(mul(v.normal, (float3x3)unity_WorldToObject));
 
 				return o;
 			}
 
 			fixed4 frag(v2f i) : SV_Target
 			{
-				return fixed4(i.color, 1.0);
+
+				fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.xyz;
+				fixed3 worldLight = normalize(_WorldSpaceLightPos0.xyz);
+				fixed3 diffuse = _LightColor0.rgb * _Diffuse.rgb * saturate(dot(i.worldNormal, worldLight));
+				fixed3 color = ambient + diffuse;
+
+
+				return fixed4(color, 1.0);
 				// return fixed4(1,1,1,1);
 			}
 
