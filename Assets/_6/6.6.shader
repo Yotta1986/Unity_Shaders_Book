@@ -1,7 +1,7 @@
 ﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
 
 
-Shader "_Mine/6.5.3" 
+Shader "_Mine/6.6" 
 {
 	Properties 
 	{
@@ -46,7 +46,7 @@ Shader "_Mine/6.5.3"
 			{
 				v2f o;
 				o.pos = UnityObjectToClipPos (v.vertex);
-				o.worldNormal = normalize(mul(v.normal, (float3x3)unity_WorldToObject));
+				o.worldNormal = UnityObjectToWorldNormal(v.normal);
 				o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
 
 				return o;
@@ -56,12 +56,12 @@ Shader "_Mine/6.5.3"
 			{
 				fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.xyz;
 
-				fixed3 worldLight = normalize(_WorldSpaceLightPos0.xyz);
+				fixed3 worldLight = normalize(UnityWorldSpaceLightDir(i.worldPos));
 				fixed3 worldNormal = normalize(i.worldNormal);
 				fixed3 diffuse = _LightColor0.rgb * _Diffuse.rgb * saturate(dot(worldNormal, worldLight));
 
 				// reflect part:
-				fixed3 viewDir = normalize(_WorldSpaceCameraPos.xyz - i.worldPos.xyz);
+				fixed3 viewDir = normalize(UnityWorldSpaceViewDir(i.worldPos));
 				fixed3 halfDir = normalize(worldLight + viewDir);
 				fixed3 specular = _LightColor0.rgb * _Specular.rgb * pow(max(0, dot(worldNormal, halfDir)), _Gloss);
 
