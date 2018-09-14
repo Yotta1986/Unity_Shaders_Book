@@ -39,15 +39,15 @@ Shader "_Mine/7.2.3"
 			{
 				float4 vertex : POSITION;
 				float3 normal : NORMAL;
-				float3 tangent : TANGENT;
+				float4 tangent : TANGENT;
 				float4 textcoord : TEXCOORD0;
 			};
 
 			struct v2f
 			{
 				float4 pos : SV_POSITION;
-				float3 lightDir : TEXCOORD0;
-				float3 viewDir : TEXCOORD1;
+				float3 tangentLightDir : TEXCOORD0;
+				float3 tangentViewDir : TEXCOORD1;
 				float4 uv : TEXCOORD2;
 			};
 
@@ -59,27 +59,31 @@ Shader "_Mine/7.2.3"
 				o.uv.xy = v.textcoord.xy * _MainTex_ST.xy + _MainTex_ST.zw;
 				o.uv.zw = v.textcoord.xy * _BumpMap_ST.xy + _BumpMap_ST.zw;
 
-				float binormal = cross( normalize(v.normal), normalize(v.tangent.xyz) ) * v.tangent.w;
+				float3 binormal = cross( normalize(v.normal), normalize(v.tangent.xyz) ) * v.tangent.w;
 
 				float3x3 rotation = float3x3(v.tangent.xyz, binormal, v.normal);
-				o.lightDir = mul(rotation, ObjSpaceLightDir(v.vertex).xyz);
-				o.viewDir = mul(rotation, ObjSpaceViewDir(v.vertex).xyz);
+				o.tangentLightDir = mul(rotation, ObjSpaceLightDir(v.vertex).xyz);
+				o.tangentViewDir = mul(rotation, ObjSpaceViewDir(v.vertex).xyz);
 
 				return o;
 			}
 
 			fixed4 frag(v2f i) : SV_Target
 			{
-				fixed3 worldLight = normalize(UnityWorldSpaceLightDir(i.worldPos));
-				fixed3 worldNormal = normalize(i.worldNormal);
+				fixed3 tangentLightDir = normalize(i.tangentLightDir);
+				fixed3 tangentViewDir = normalize(i.tangentViewDir);
+
+				fixed4 packNormal = tex2D(_BumpMap, i.uv.zw);
+				fixed3 tangentNormal;
+				tangentNormal.xy = (packNormal.xy *2 -1) * _BumpScale;
+				tangentNormal.z = sqrt(1.0 - saturate(dot(tangentNormal.xy, tangentNormal.xy)));
 
 				fixed3 albedo = tex2D(_MainTex, i.uv).rgb * _Color.rgb;
 				fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.xyz * albedo;
-				fixed3 diffuse = _LightColor0.rgb * albedo * max(0, dot(worldNormal, worldLight));
+				fixed3 diffuse = _LightColor0.rgb * albedo * max(0, dot(tangentNormal, tangentLightDir));
 
-				fixed3 viewDir = normalize(UnityWorldSpaceViewDir(i.worldPos));
-				fixed3 halfDir = normalize(worldLight + viewDir);
-				fixed3 specular = _LightColor0.rgb * _Specular.rgb * pow(max(0, dot(worldNormal, halfDir)), _Gloss);
+				fixed3 halfDir = normalize(tangentLightDir + tangentViewDir);
+				fixed3 specular = _LightColor0.rgb * _Specular.rgb * pow(max(0,dot(tangentNormal,halfDir)), _Gloss);
 
 				fixed3 color = ambient + diffuse +  specular;
 				return fixed4(color, 1.0);
