@@ -46,8 +46,8 @@ Shader "_Mine/7.2.3"
 			struct v2f
 			{
 				float4 pos : SV_POSITION;
-				float3 worldNormal : TEXCOORD0;
-				float3 worldPos : TEXCOORD1;
+				float3 lightDir : TEXCOORD0;
+				float3 viewDir : TEXCOORD1;
 				float4 uv : TEXCOORD2;
 			};
 
@@ -55,9 +55,16 @@ Shader "_Mine/7.2.3"
 			{
 				v2f o;
 				o.pos = UnityObjectToClipPos (v.vertex);
-				o.worldNormal = UnityObjectToWorldNormal(v.normal);
-				o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
-				o.uv = v.textcoord.xy * _MainTex_ST.xy + _MainTex_ST.zw;
+
+				o.uv.xy = v.textcoord.xy * _MainTex_ST.xy + _MainTex_ST.zw;
+				o.uv.zw = v.textcoord.xy * _BumpMap_ST.xy + _BumpMap_ST.zw;
+
+				float binormal = cross( normalize(v.normal), normalize(v.tangent.xyz) ) * v.tangent.w;
+
+				float3x3 rotation = float3x3(v.tangent.xyz, binormal, v.normal);
+				o.lightDir = mul(rotation, ObjSpaceLightDir(v.vertex).xyz);
+				o.viewDir = mul(rotation, ObjSpaceViewDir(v.vertex).xyz);
+
 				return o;
 			}
 
