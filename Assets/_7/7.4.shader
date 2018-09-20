@@ -15,7 +15,7 @@ Shader "_Mine/7.4"
 		_BumpScale("Bump Scale", Float) = 1.0
 
 		_SpecularMask("Specular Mask", 2D) = "bump" {}
-		_SpecularScale("Specular Scale", Float) = 1.0;
+		_SpecularScale("Specular Scale", Float) = 1.0
 	}
 
 	SubShader 
@@ -41,7 +41,7 @@ Shader "_Mine/7.4"
 			float _Gloss;
 
 			sampler2D _SpecularMask;
-			float _specularMask;
+			fixed4 _SpecularScale;
 
 			struct a2v
 			{
@@ -56,7 +56,7 @@ Shader "_Mine/7.4"
 				float4 pos : SV_POSITION;
 				float2 uv : TEXCOORD0;
 				float3 lightDir: TEXCOORD1;
-				float3 viewDir : TEXCOORD2；
+				float3 viewDir : TEXCOORD2;
 			};
 
 			v2f vert(a2v v)
@@ -87,7 +87,10 @@ Shader "_Mine/7.4"
 				fixed3 diffuse = _LightColor0.rgb * albedo * max(0, dot(tangentNormal, tangentLightDir));
 
 				fixed3 halfDir = normalize(tangentLightDir + tangentViewDir);
-				fixed specularMask = tex2D(_SpecularMask, i.uv).r * _SPecul
+
+				fixed specularMask = tex2D(_SpecularMask, i.uv).r * _SpecularScale;
+				fixed3 specular = _LightColor0.rgb * _Specular.rgb * pow(max(0, dot(tangentNormal, halfDir)), _Gloss) * specularMask;
+				return fixed4(ambient + diffuse + specular, 1.0);
 			}
 
 			ENDCG
