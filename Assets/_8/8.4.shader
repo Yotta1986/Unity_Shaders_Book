@@ -1,16 +1,19 @@
-﻿Shader "_Mine/8.3"
+﻿Shader "_Mine/8.4"
 {
 	Properties
 	{
 		_MainTex ("Texture", 2D) = "white" {}
 		_Color ("MainTex", Color) = (1,1,1,1)
-		_Cutoff("Alpha Cutoff", Range(0,1)) = 0.5
+		_AlphaScale("Alpha Scale", Range(0,1)) = 1
 	}
 	SubShader
 	{
-		Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RanderType"="TransparentCutout" }
+		Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RanderType"="TransparentCutout" }
 		Pass{
 			Tags{"LightMode" = "ForwardBase"}
+			ZWrite Off
+			Blend SrcAlpha OneMinusSrcAlpha
+
 			CGPROGRAM
 
 			#pragma vertex vert
@@ -22,9 +25,7 @@
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
 			fixed4 _Color;
-			fixed _Cutoff;
-
-			
+			fixed _AlphaScale;
 
 			struct a2v
 			{
@@ -56,24 +57,12 @@
 				fixed3 worldLightDir = normalize(UnityWorldSpaceLightDir(i.worldPos));
 				fixed4 texColor = tex2D(_MainTex, i.uv);
 
-				// Alpha Test
-				//clip(texColor.a - _Cutoff);
-				
-				// Equal to
-				if((texColor.a - _Cutoff) < 0.0)
-				{
-					discard;
-				}
-
 				fixed3 albedo = texColor.rgb * _Color.rgb;
 				fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.xyz * albedo;
 				fixed3 diffuse = _LightColor0.rgb * albedo * max(0, dot(worldNormal, worldLightDir));
 
-				return fixed4(ambient + diffuse, 1.0);
+				return fixed4(ambient + diffuse, texColor.a * _AlphaScale);
 			}
-
-
-
 
 			ENDCG
 
@@ -81,4 +70,5 @@
 
 		
 	}
+		Fallback "Transparent/VertexLit"
 }
