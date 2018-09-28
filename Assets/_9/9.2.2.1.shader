@@ -34,8 +34,8 @@
 			struct v2f
 			{
 				float4 pos : SV_POSITION;
-				fixed3 worldNormal : COLOR;
-				fixed3 worldPos : COLOR1;
+				float3 worldNormal : COLOR;
+				float3 worldPos : COLOR1;
 			};
 
 
@@ -73,7 +73,7 @@
 
 		Pass{
 			Tags{ "LightMode"="ForwardAdd"}
-			Blend one one 
+			Blend One One
 
 			CGPROGRAM
 			#pragma multi_compile_fwdadd
@@ -90,14 +90,14 @@
 			struct a2v
 			{
 				float4 vertex : POSITION;
-				fixed3 normal : NORMAL;
+				float3 normal : NORMAL;
 			};
 
 			struct v2f
 			{
 				float4 pos : SV_POSITION;
-				fixed3 worldNormal : COLOR;
-				fixed3 worldPos : COLOR1;
+				float3 worldNormal : COLOR;
+				float3 worldPos : COLOR1;
 			};
 
 
@@ -113,7 +113,6 @@
 
 			fixed4 frag(v2f i) : SV_Target
 			{
-				fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.xyz;
 
 #ifdef USING_DIRECTIONAL_LIGHT
 				fixed3 worldLight = normalize(_WorldSpaceLightPos0.xyz);
@@ -136,7 +135,7 @@
 				fixed atten = tex2D(_LightTexture0, dot(lightCoord,lightCoord).rr).UNITY_ATTEN_CHANNEL; 
 
 #endif
-				fixed3 color = ambient + (diffuse + specular) * atten;
+				fixed3 color = (diffuse + specular) * atten;
 				return fixed4(color, 1.0);
 			}
 
