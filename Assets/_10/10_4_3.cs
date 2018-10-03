@@ -87,7 +87,7 @@ public class ProceduralTextureGeneration_10_4_3 : MonoBehaviour {
 		{
 			for(int h=0; h<textureWidth; h++)
 			{
-				_MixColor()
+				// _MixColor()
 			}
 		}
 
