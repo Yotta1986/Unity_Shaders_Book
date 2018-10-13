@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BSC : PostEffectsBaseMine {
+public class Mine_12_2 : PostEffectsBaseMine {
 
 
 	public Shader briSatConShader;
