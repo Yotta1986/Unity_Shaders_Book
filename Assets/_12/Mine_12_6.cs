@@ -35,7 +35,7 @@ public class Mine_12_6 : PostEffectsBaseMine {
 			accumulationTexture.MarkRestoreExpected();
 
 			material.SetFloat("_BlurAmount", 1.0f-blurAmount);
-			Graphics.Blit(src, accumulationTexture, matreial);
+			Graphics.Blit(src, accumulationTexture, material);
 			Graphics.Blit(accumulationTexture, dest);
 		} else {
 			Graphics.Blit(src, dest);

@@ -8,6 +8,7 @@
 	SubShader 
 	{
 		CGINCLUDE
+		#include "UnityCG.cginc"
 		
 		sampler2D _MainTex;
 		fixed _BlurAmount;
