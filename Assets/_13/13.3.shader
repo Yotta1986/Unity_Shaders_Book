@@ -1,75 +1,86 @@
 ﻿Shader "_Mine/13.3"
 {
-	Properties 
-	{
+	Properties {
 		_MainTex ("Base (RGB)", 2D) = "white" {}
-		_BlurSize ("Blur Size", Float) = 1.0
+		_FogDensity ("Fog Density", Float) = 1.0
+		_FogColor ("Fog Color", Color) = (1, 1, 1, 1)
+		_FogStart ("Fog Start", Float) = 0.0
+		_FogEnd ("Fog End", Float) = 1.0
 	}
 	SubShader 
 	{
 		CGINCLUDE
 		#include "UnityCG.cginc"
 		
+		float4x4 _FrustumCornersRay;
+		
 		sampler2D _MainTex;
 		half4 _MainTex_TexelSize;
 		sampler2D _CameraDepthTexture;
-		float4x4 _CurrentViewProjectionInverseMatrix;
-		float4x4 _PreviousViewProjectionMatrix;
-		half _BlurSize;
+		half _FogDensity;
+		fixed4 _FogColor;
+		float _FogStart;
+		float _FogEnd;
 
 		struct v2f {
 			float4 pos : SV_POSITION;
 			half2 uv : TEXCOORD0;
 			half2 uv_depth : TEXCOORD1;
+			float4 interpolatedRay : TEXCOORD2;
 		};
 
 		v2f vert(appdata_img v) {
 			v2f o;
-			
 			o.pos = UnityObjectToClipPos(v.vertex);
 			
 			o.uv = v.texcoord;
 			o.uv_depth = v.texcoord;
+			
 			#if UNITY_UV_STARTS_AT_TOP
 			if (_MainTex_TexelSize.y < 0)
 				o.uv_depth.y = 1 - o.uv_depth.y;
 			#endif
+			
+			int index = 0;
+			if (v.texcoord.x < 0.5 && v.texcoord.y < 0.5) {
+				index = 0;
+			} else if (v.texcoord.x > 0.5 && v.texcoord.y < 0.5) {
+				index = 1;
+			} else if (v.texcoord.x > 0.5 && v.texcoord.y > 0.5) {
+				index = 2;
+			} else {
+				index = 3;
+			}
+
+			#if UNITY_UV_STARTS_AT_TOP
+			if (_MainTex_TexelSize.y < 0)
+				index = 3 - index;
+			#endif
+			
+			o.interpolatedRay = _FrustumCornersRay[index];
+				 	 
 			return o;
 		}
-		fixed4 frag (v2f i) : SV_Target {
-
-			float d = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_depth);
-			#if defined(UNITY_REVERSED_Z)
-				d = 1.0 - d;
-			#endif
-			float4 H = float4(i.uv.x * 2 - 1, i.uv.y * 2 - 1, d * 2 - 1, 1);
-			float4 D = mul(_CurrentViewProjectionInverseMatrix, H);
-			float4 worldPos = D / D.w;
-
-
-			float4 currentPos = H;
-			float4 previousPos = mul(_PreviousViewProjectionMatrix, worldPos);
-			previousPos /= previousPos.w;
-			float2 velocity = (currentPos.xy - previousPos.xy)/2.0;
-
-
-			float2 uv = i.uv;
-			float4 c = tex2D(_MainTex, uv);
-			uv += velocity * _BlurSize;
-			for (int it = 1; it < 3; it++, uv += velocity * _BlurSize) {
-				float4 currentColor = tex2D(_MainTex, uv);
-				c += currentColor;
-			}
-			c /= 3;
-
-			return fixed4(c.rgb, 1.0);
+		
+		fixed4 frag(v2f i) : SV_Target {
+			float linearDepth = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_depth));
+			float3 worldPos = _WorldSpaceCameraPos + linearDepth * i.interpolatedRay.xyz;
+						
+			float fogDensity = (_FogEnd - worldPos.y) / (_FogEnd - _FogStart); 
+			fogDensity = saturate(fogDensity * _FogDensity);
+			
+			fixed4 finalColor = tex2D(_MainTex, i.uv);
+			finalColor.rgb = lerp(finalColor.rgb, _FogColor.rgb, fogDensity);
+			
+			return finalColor;
 		}
 		
 		ENDCG
 
-		Pass {      
+		
+		Pass {
 			ZTest Always Cull Off ZWrite Off
-			    	
+			     	
 			CGPROGRAM  
 			
 			#pragma vertex vert  
